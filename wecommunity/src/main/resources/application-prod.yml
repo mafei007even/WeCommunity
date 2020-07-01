@@ -1,0 +1,139 @@
+server:
+  port: 8080
+  servlet:
+    # context-path: /community
+    context-path:
+spring:
+  thymeleaf:
+    cache: true
+  output:
+    ansi:
+      enabled: always
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://***:3306/wecommunity?characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai
+    username: root
+    password: ***
+    type: com.zaxxer.hikari.HikariDataSource
+    hikari:
+      maximum-pool-size: 8
+      minimum-idle: 3
+      idle-timeout: 30000
+  mail:
+    host: smtp.qq.com # 邮件服务器的SMTP地址
+    port: 465 # 邮件服务器的SMTP端口
+    username: ***@*** # 发件人
+    password: ***  # 密码，授权码
+    protocol: smtps  # 使用安全协议
+    properties:
+      mail.smtp.ssl.enable: true # 使用 qq, gmail邮箱时需强制开启SSL安全连接
+  redis:
+    host: ***
+    port: 6379
+    password: ***
+  servlet:
+    multipart:
+      max-file-size: 3MB
+  kafka:
+    bootstrap-servers:
+      - ***:9092
+    consumer:
+      group-id: community-consumer-group
+      enable-auto-commit: true
+      auto-commit-interval: 3000
+  data:
+    elasticsearch:
+      cluster-name: ***
+      cluster-nodes: ***:9300
+  elasticsearch:
+    rest:
+      uris: ["***:9200"]
+      connection-timeout: 6s
+  quartz:
+    scheduler-name: communityScheduler
+    job-store-type: jdbc
+    properties:
+      org:
+        quartz:
+          scheduler:
+            instanceId: AUTO
+          jobStore:
+            isClustered: true
+            class: org.quartz.impl.jdbcjobstore.JobStoreTX
+            driverDelegateClass: org.quartz.impl.jdbcjobstore.StdJDBCDelegate
+          threadPool:
+            threadCount: 2
+            class: org.quartz.simpl.SimpleThreadPool
+  task:
+    scheduling:
+      pool:
+        size: 2
+    execution:
+      pool:
+        core-size: 5
+        max-size: 10
+        queue-capacity: 50
+
+mybatis:
+  mapper-locations: classpath:mapper/*.xml
+  type-aliases-package: com.aatroxc.wecommunity.model.entity
+  configuration:
+    use-generated-keys: true
+    map-underscore-to-camel-case: true
+    default-enum-type-handler: com.aatroxc.wecommunity.config.mybatis.EnumValueTypeHandler
+
+mapper:
+  enum-as-simple-type: true
+
+logging:
+  level:
+    com:
+      aatroxc:
+        wecommunity:
+          dao:
+            info
+
+community:
+  path:
+    domain: http://community.aatroxc.club
+    static-domain: http://static.aatroxc.club
+    upload: /myapps/java/wecommunity/upload_header
+
+# wk
+wk:
+  image:
+    command: /myapps/scripts/wkhtmltoimage.sh
+    storage: /myapps/java/wecommunity/wk_images
+
+# qiniu
+qiniu:
+  key:
+    access: ***
+    secret: ***-***
+  bucket:
+    header:
+      name: ***
+      url: ***
+    share:
+      name: ***
+      url: ***
+
+# 帖子权重更新间隔，单位：毫秒
+postScoreRefreshInterval: 120000
+
+# caffeine 缓存配置，是自定义的
+# 这里对帖子进行缓存，策略采用自动过期时间，那么就可能会出现点赞了但还没刷缓存导致点赞数不对的情况，不影响使用
+caffeine:
+  posts:
+    max-size: 15
+    expire-seconds: 120
+
+# actuator
+management:
+  endpoints:
+    web:
+      exposure:
+        include: ['httptrace', 'metrics','env','logfile','health', 'info']
+  health:
+    elasticsearch:
+      response-timeout: 3s

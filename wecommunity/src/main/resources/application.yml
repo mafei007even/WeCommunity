@@ -1,0 +1,8 @@
+# profile
+spring:
+  profiles:
+    active: prod
+
+logging:
+  config: classpath:logback-spring-${spring.profiles.active}.xml
+# logback

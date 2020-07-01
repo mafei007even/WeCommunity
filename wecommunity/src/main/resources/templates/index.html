@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+<!--    访问该页面时，在此处生成 CSRF 令牌-->
+<!--    页面中的表单在加入 Spring Security 后会自动加上隐藏域 _csrf-->
+<!--    这里是对 ajax 请求设置，获取 csrf 的 key 和 value，放在请求头中-->
+<!--    每个需要 ajax 请求的页面都需要这样设置-->
+<!--    <meta name="_csrf" th:content="${_csrf.token}">-->
+<!--    <meta name="_csrf_header" th:content="${_csrf.headerName}">-->
+
+    <link rel="icon" th:href="@{|${staticDomain}/img/logo.png|}"/>
+    <link rel="stylesheet" th:href="@{|${staticDomain}/css/bootstrap.min.css|}" type="text/css"/>
+    <link rel="stylesheet" th:href="@{|${staticDomain}/css/global.css|}"/>
+<!--    需要 kindeditor 的地方才加载这个 css-->
+    <link rel="stylesheet" th:href="@{|${staticDomain}/editor/themes/default/default.css|}" />
+    <title>微社区 - 首页</title>
+
+</head>
+<body>
+<div class="nk-container">
+    <!-- 头部 -->
+    <header class="bg-dark sticky-top" th:fragment="header">
+        <div class="container">
+            <!-- 导航 -->
+            <nav class="navbar navbar-expand-lg navbar-dark">
+                <!-- logo -->
+                <a th:style="|background: url('${staticDomain}/img/logo-v2.png') no-repeat;
+	                background-size: 147px 42px; width: 147px; height: 42px; margin: 5px 15px 5px 0;|" class="navbar-brand" th:href="@{/}"></a>
+                <button class="navbar-toggler" type="button" data-toggle="collapse"
+                        data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
+                        aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <!-- 功能 -->
+                <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                    <ul class="navbar-nav mr-auto">
+                        <li class="nav-item ml-3 btn-group-vertical">
+                            <a class="nav-link" th:href="@{/}">首页</a>
+                        </li>
+                        <li class="nav-item ml-3 btn-group-vertical" th:if="${loginUser != null}">
+                            <a target="_blank" class="nav-link position-relative" th:href="@{/letter/list}">消息<span
+                                    class="badge badge-danger" th:text="${allUnreadCount != 0 ? allUnreadCount : ''}">12</span></a>
+                        </li>
+                        <li class="nav-item ml-3 btn-group-vertical" th:if="${loginUser == null}">
+                            <a class="nav-link" th:href="@{/register}">注册</a>
+                        </li>
+                        <li class="nav-item ml-3 btn-group-vertical"  th:if="${loginUser == null}">
+                            <a class="nav-link" th:href="@{/login}">登录</a>
+                        </li>
+                        <li class="nav-item ml-3 btn-group-vertical dropdown"  th:if="${loginUser != null}">
+                            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button"
+                               data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                <img th:src="|${#strings.startsWith(loginUser.headerUrl, 'http://') ? loginUser.headerUrl : 'http://images.nowcoder.com' + loginUser.headerUrl}|" class="rounded-circle"
+                                     style="width:30px;"/>
+                            </a>
+                            <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                                <a target="_blank" class="dropdown-item text-center" th:href="@{|/user/profile/${loginUser.id}|}">个人主页</a>
+                                <a target="_blank" class="dropdown-item text-center" th:href="@{/user/setting}">账号设置</a>
+                                <a class="dropdown-item text-center" th:href="@{/logout}">退出登录</a>
+                                <div class="dropdown-divider"></div>
+                                <span class="dropdown-item text-center text-secondary" th:utext="${loginUser.username}">nowcoder</span>
+                            </div>
+                        </li>
+                    </ul>
+                    <!-- 搜索 -->
+                    <form class="form-inline my-2 my-lg-0" method="get" th:action="@{/search}">
+                        <input class="form-control mr-sm-2" type="search" aria-label="Search" name="keyword" th:value="${keyword}"/>
+                        <button class="btn btn-outline-light my-2 my-sm-0" type="submit">搜索</button>
+                    </form>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <!-- 内容 -->
+    <div class="main">
+        <div class="container">
+            <div class="position-relative">
+                <!-- 筛选条件 -->
+                <ul class="nav nav-tabs mb-3">
+                    <li class="nav-item">
+                        <a th:class="|nav-link ${orderMode == null || orderMode.name() == 'DATE' ? 'active' : ''}|" th:href="@{/index(orderMode=0)}">最新</a>
+                    </li>
+                    <li class="nav-item">
+                        <a th:class="|nav-link ${orderMode != null && orderMode.name() == 'HEAT' ? 'active' : ''}|"  th:href="@{/index(orderMode=1)}">最热</a>
+                    </li>
+                </ul>
+                <button id="iWantPublish" type="button" class="btn btn-primary btn-sm position-absolute rt-0" data-toggle="modal"
+                        th:if="${loginUser != null}" th:onclick="loadKEScript([[${staticDomain}]]);" data-target="#publishModal">我要发布
+                </button>
+            </div>
+            <!-- 弹出框 -->
+            <div class="modal fade" id="publishModal" role="dialog" aria-labelledby="publishModalLabel"
+                 aria-hidden="true">
+                <div class="modal-dialog modal-lg" role="document" style="max-width: 966px; width: 966px">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="publishModalLabel">新帖发布</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <form>
+                                <div class="form-group">
+                                    <label for="recipient-name" class="col-form-label">标题：</label>
+                                    <input type="text" class="form-control" id="recipient-name">
+                                </div>
+                                <div class="form-group">
+                                    <label for="message-text" class="col-form-label">正文：</label>
+                                    <textarea class="form-control" id="message-text" name="content" style="width:100%;height:300px;"></textarea>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">取消</button>
+                            <button type="button" class="btn btn-primary" id="publishBtn">发布</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- 提示框 -->
+            <div class="modal fade" id="hintModal" tabindex="-1" role="dialog" aria-labelledby="hintModalLabel"
+                 aria-hidden="true">
+                <div class="modal-dialog modal-lg" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="hintModalLabel">提示</h5>
+                        </div>
+                        <div class="modal-body" id="hintBody">
+                            发布完毕!
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 帖子列表 -->
+            <ul class="list-unstyled">
+                <li class="media pb-3 pt-3 mb-3 border-bottom" th:each="map : ${discussPosts}">
+                    <a th:href="@{|/user/profile/${map.user.id}|}" target="_blank">
+                        <img th:src="|${#strings.startsWith(map.user.headerUrl, 'http://') ? map.user.headerUrl : 'http://images.nowcoder.com' + map.user.headerUrl}|" class="mr-4 rounded-circle" alt="用户头像"
+                             style="width:50px;height:50px;">
+                    </a>
+                    <div class="media-body">
+                        <h6 class="mt-0 mb-3">
+                            <a target="_blank" th:href="@{|/discuss/${map.post.id}|}" th:utext="${map.post.title}">备战春招，面试刷题跟他复习，一个月全搞定！</a>
+
+                            <span class="badge badge-secondary bg-primary" th:if="${map.post.type.value == 1}">置顶</span>
+                            <span class="badge badge-secondary bg-danger" th:if="${map.post.status.value == 1}">精华</span>
+                        </h6>
+                        <div class="text-muted font-size-12">
+                            <u class="mr-3" th:utext="${map.user.username}">寒江雪</u> 发布于 <b
+                                th:text="${#dates.format(map.post.createTime, 'yyyy-MM-dd HH:mm:ss')}">2019-04-15
+                            15:32:18</b>
+                            <ul class="d-inline float-right">
+                                <li class="d-inline ml-2">赞 <span th:text="${map.likeCount}">11</span></li>
+                                <li class="d-inline ml-2">|</li>
+                                <li class="d-inline ml-2">回帖 <span th:text="${map.post.commentCount}">7</span></li>
+                            </ul>
+                        </div>
+                    </div>
+                </li>
+            </ul>
+            <!-- 分页 -->
+            <nav class="mt-5" th:if="${page != null && page.rows > 0}" th:fragment="pagination">
+                <ul class="pagination justify-content-center">
+                    <li th:class="|page-item ${page.current == 1 ? 'disabled' : ''}|">
+                        <!--                        /index?current=1&limit=5-->
+                        <a class="page-link" th:href="@{${page.path}(current=1)}">首页</a>
+                    </li>
+                    <li th:class="|page-item ${page.current == 1 ? 'disabled' : ''}|">
+                        <a class="page-link" th:href="@{${page.path}(current=${page.current - 1})}">上一页</a>
+                    </li>
+                    <li th:class="|page-item ${i == page.current ? 'active' : ''}|"
+                        th:each="i : ${#numbers.sequence(page.from, page.to)}">
+                        <a class="page-link" th:href="@{${page.path}(current=${i})}" th:text="${i}">1</a>
+                    </li>
+
+                    <li th:class="|page-item ${page.current == page.totalPage ? 'disabled' : ''}|">
+                        <a class="page-link" th:href="@{${page.path}(current=${page.current + 1})}">下一页</a>
+                    </li>
+                    <li th:class="|page-item ${page.current == page.totalPage ? 'disabled' : ''}|">
+                        <a class="page-link" th:href="@{${page.path}(current=${page.totalPage})}">末页</a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </div>
+
+    <!-- 尾部 -->
+    <footer class="bg-dark" th:fragment="footer">
+        <div class="container">
+            <div class="row">
+                <!-- 二维码 -->
+                <div class="col-4 qrcode">
+                    <img th:src="@{|${staticDomain}/img/app.png|}" class="img-thumbnail"
+                         style="width:116px;"/>
+                </div>
+                <!-- 公司信息 -->
+                <div class="col-8 detail-info">
+                    <div class="row">
+                        <div class="col">
+                            <ul class="nav" id="footer_nav">
+                                <li class="nav-item">
+                                    <a class="nav-link text-light" href="#">关于我们</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link text-light" href="#">加入我们</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link text-light" href="#">意见反馈</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link text-light" href="#">联系我们</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link text-light" href="#">免责声明</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link text-light" href="#">友情链接</a>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col">
+                            <ul class="nav btn-group-vertical company-info">
+                                <li class="nav-item text-white-50">
+                                    公司地址：安徽省合肥市xxx路xxx号微社区xxxxxxx有限公司
+                                </li>
+                                <li class="nav-item text-white-50">
+                                    联系方式：010-11111111(电话)&nbsp;&nbsp;&nbsp;&nbsp;Email：aatroxc007@gmail.com
+                                </li>
+                                <li class="nav-item text-white-50" id="beian" >
+                                    微社区©2020 All rights reserved &nbsp;| &nbsp;
+                                    <a style="color: rgba(255,255,255,.8)" href="http://www.beian.miit.gov.cn" target="_blank">皖ICP备20000460号-1</a>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script th:src="@{|${staticDomain}/js/jquery-3.3.1.min.js|}"></script>
+        <script th:src="@{|${staticDomain}/js/popper.min.js|}"></script>
+        <script th:src="@{|${staticDomain}/js/bootstrap.min.js|}"></script>
+        <script th:src="@{|${staticDomain}/js/global.js|}"></script>
+    </footer>
+</div>
+
+<script th:src="@{|${staticDomain}/js/index.js|}"></script>
+<script>
+/*
+    $("#beian a").hover(function(){
+        $("#beian a").css("color", 'red')
+    },function(){
+        $("#beian a").css("color", "rgba(255,255,255,.8)")
+    });
+*/
+
+    function loadKE(){
+        // KindEditor.ready(function(K) {
+        //		window.editor = K.create('#message-text', {
+        window.editor = KindEditor.create('#message-text', {
+            resizeType : 1,
+            uploadJson : 'http://upload.qiniup.com',
+            allowPreviewEmoticons : true,
+            allowImageUpload : true,
+            items : [
+                'source', '|','fontname', 'fontsize', '|', 'forecolor', 'hilitecolor', 'bold', 'italic', 'underline',
+                'removeformat', '|', 'justifyleft', 'justifycenter', 'justifyright', 'insertorderedlist',
+                'insertunorderedlist', '|', 'emoticons', 'image', 'link']
+        });
+        // });
+    }
+
+    function loadKEScript(staticDomain) {
+        // 将 zh-CN.js  image.js 都整合进 kindeditor.js 中了
+        $.ajax({
+            url: staticDomain + "/editor/kindeditor.js",
+            dataType: "script",
+            cache: true
+        }).done(function() {
+            loadKE();
+        });
+
+    }
+
+</script>
+</body>
+</html>

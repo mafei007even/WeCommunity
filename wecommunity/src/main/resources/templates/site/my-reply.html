@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+	<link rel="icon" th:href="@{|${staticDomain}/img/logo.png|}"/>
+	<link rel="stylesheet" th:href="@{|${staticDomain}/css/bootstrap.min.css|}" type="text/css"/>
+	<link rel="stylesheet" th:href="@{|${staticDomain}/css/global.css|}"/>
+	<title>微社区 - 我的回复</title>
+</head>
+<body>
+	<div class="nk-container">
+		<!-- 头部 -->
+		<header class="bg-dark sticky-top" th:replace="index::header">
+			<div class="container">
+				<!-- 导航 -->
+				<nav class="navbar navbar-expand-lg navbar-dark">
+					<!-- logo -->
+					<a class="navbar-brand" href="#"></a>
+					<button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+						<span class="navbar-toggler-icon"></span>
+					</button>
+					<!-- 功能 -->
+					<div class="collapse navbar-collapse" id="navbarSupportedContent">
+						<ul class="navbar-nav mr-auto">
+							<li class="nav-item ml-3 btn-group-vertical">
+								<a class="nav-link" href="../index.html">首页</a>
+							</li>
+							<li class="nav-item ml-3 btn-group-vertical">
+								<a class="nav-link position-relative" href="letter.html">消息<span class="badge badge-danger">12</span></a>
+							</li>
+							<li class="nav-item ml-3 btn-group-vertical">
+								<a class="nav-link" href="register.html">注册</a>
+							</li>
+							<li class="nav-item ml-3 btn-group-vertical">
+								<a class="nav-link" href="login.html">登录</a>
+							</li>
+							<li class="nav-item ml-3 btn-group-vertical dropdown">
+								<a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+									<img src="http://images.nowcoder.com/head/1t.png" class="rounded-circle" style="width:30px;"/>
+								</a>
+								<div class="dropdown-menu" aria-labelledby="navbarDropdown">
+									<a class="dropdown-item text-center" href="profile.html">个人主页</a>
+									<a class="dropdown-item text-center" href="setting.html">账号设置</a>
+									<a class="dropdown-item text-center" href="login.html">退出登录</a>
+									<div class="dropdown-divider"></div>
+									<span class="dropdown-item text-center text-secondary">nowcoder</span>
+								</div>
+							</li>
+						</ul>
+						<!-- 搜索 -->
+						<form class="form-inline my-2 my-lg-0" action="search.html">
+							<input class="form-control mr-sm-2" type="search" aria-label="Search" />
+							<button class="btn btn-outline-light my-2 my-sm-0" type="submit">搜索</button>
+						</form>
+					</div>
+				</nav>
+			</div>
+		</header>
+
+		<!-- 内容 -->
+		<div class="main">
+			<div class="container">
+				<!-- 选项 -->
+				<div class="position-relative">
+					<ul class="nav nav-tabs">
+						<li class="nav-item">
+							<a class="nav-link" th:href="@{|/user/profile/${userId}|}">个人信息</a>
+						</li>
+						<li class="nav-item">
+							<a class="nav-link" th:href="@{|/user/post-list/${userId}|}">我的帖子</a>
+						</li>
+						<li class="nav-item">
+							<a class="nav-link active" th:href="@{/user/reply}">我的回复</a>
+						</li>
+					</ul>
+					<a th:href="@{|/user/profile/${userId}|}" class="text-muted position-absolute rt-0">返回个人主页&gt;</a>
+				</div>
+				<!-- 我的回复 -->
+				<div class="mt-4">
+					<h6><b class="square"></b> 回复的帖子(<span th:text="${page.rows}">379</span>)</h6>
+					<ul class="list-unstyled mt-4 pl-3 pr-3">
+						<li class="border-bottom pb-3 mt-4" th:each="replyListVo : ${replyListVos}">
+							<div class="font-size-18 text-info">
+								<a target="_blank" th:href="@{|/discuss/${replyListVo.post.id}|}" class="text-info"
+								   th:utext="${replyListVo.post.status.name() == 'BLOCK' ? '此贴已被删除！' : replyListVo.post.title}">备战春招，面试刷题跟他复习，一个月全搞定！</a>
+							</div>
+							<div class="mt-1 font-size-14" style="word-break: break-all;word-wrap: break-word;">
+
+								<i class="font-size-16" th:utext="${replyListVo.reply.content}">顶顶顶!</i>
+
+								<span th:if="${replyListVo.target != null}"><br></span>
+								<div class="m-2 p-2" style="background-color: rgb(239,240,242);" th:if="${replyListVo.target != null}">
+
+									<span th:utext="${replyListVo.targetUser == null ? ' 回复评论【' + replyListVo.target.content + '】' :
+									' 在评论【' + replyListVo.target.content + '】下回复用户: '}"></span>
+									<a th:if="${replyListVo.targetUser != null}" target="_blank" style="color: #4788b6"
+									   th:href="@{|/user/profile/${replyListVo.targetUser.id}|}" th:utext="${replyListVo.targetUser.username}"></a>
+
+								</div>
+
+							</div>
+							<div class="text-right font-size-12 text-muted">
+								赞 <i class="mr-3" th:text="${replyListVo.likeCount}">11</i> 回复于 <b th:text="${#dates.format(replyListVo.reply.createTime, 'yyyy-MM-dd HH:mm:ss')}">2019-04-15 10:10:10</b>
+							</div>
+						</li>
+					</ul>
+					<!-- 分页 -->
+					<nav class="mt-5" th:replace="index::pagination">
+						<ul class="pagination justify-content-center">
+							<li class="page-item"><a class="page-link" href="#">首页</a></li>
+							<li class="page-item disabled"><a class="page-link" href="#">上一页</a></li>
+							<li class="page-item active"><a class="page-link" href="#">1</a></li>
+							<li class="page-item"><a class="page-link" href="#">2</a></li>
+							<li class="page-item"><a class="page-link" href="#">3</a></li>
+							<li class="page-item"><a class="page-link" href="#">4</a></li>
+							<li class="page-item"><a class="page-link" href="#">5</a></li>
+							<li class="page-item"><a class="page-link" href="#">下一页</a></li>
+							<li class="page-item"><a class="page-link" href="#">末页</a></li>
+						</ul>
+					</nav>					
+				</div>				
+			</div>
+		</div>
+
+		<!-- 尾部 -->
+		<footer th:replace="index::footer"></footer>
+	</div>
+
+</body>
+</html>

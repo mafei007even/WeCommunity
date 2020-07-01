@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.aatroxc.wecommunity.dao.MessageMapper">
+
+    <sql id="selectFields">
+        id, from_id, to_id, conversation_id, content, status, create_time
+    </sql>
+
+<!--    <select id="selectConversations" resultType="Message">
+        SELECT *
+        FROM message
+        WHERE id IN (
+            SELECT max(id)
+            FROM message
+            WHERE from_id != 1
+            AND status != 2
+            AND (from_id = #{userId} OR to_id = #{userId})
+            AND (delete_by IS NULL OR delete_by NOT LIKE "%"#{userId}"%")
+            GROUP BY conversation_id
+        );
+    </select>-->
+
+    <select id="selectLetterUnreadCount" resultType="int">
+        select count(id)
+        from message
+        where status = 0
+        and from_id != 1
+        and to_id = #{userId}
+        <if test="conversationId != null">
+            and conversation_id = #{conversationId}
+        </if>
+    </select>
+
+    <update id="updateStatus">
+        update message
+        set status = #{status}
+        where id in 
+        <foreach collection="ids" item="id" open="(" close=")" separator=",">
+            #{id}
+        </foreach>
+    </update>
+
+</mapper>
